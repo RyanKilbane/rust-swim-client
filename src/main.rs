@@ -16,10 +16,10 @@ fn main()  {
     };
     let address = format!("{}:{}", host, port);
     let mut stream = TcpStream::connect(address).unwrap();
+    let mut y = TcpStream::try_clone(&stream).unwrap();
+    thread::spawn(move || read_line(&mut y));
     loop{
         let mut client_buffer = [0u8; 100];
-        let mut y = TcpStream::try_clone(&stream).unwrap();
-        thread::spawn(move || read_line(&mut y));
         stream.read(&mut client_buffer).unwrap();
         stream.flush().unwrap();
         println!("{}", str::from_utf8(&client_buffer).unwrap());
@@ -31,6 +31,5 @@ fn read_line(stream: &mut TcpStream){
     for line in stdin.lock().lines(){
         let l = line.unwrap().clone();
         stream.write(l.as_bytes()).unwrap();
-        break
     }
 }
