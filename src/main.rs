@@ -1,6 +1,7 @@
 use std::io::{self, BufRead, Read, Write};
 use std::net::TcpStream;
-use std::str;
+use std::thread::{self};
+use std::{str};
 use std::env;
 
 fn main()  {
@@ -17,12 +18,19 @@ fn main()  {
     let mut stream = TcpStream::connect(address).unwrap();
     loop{
         let mut client_buffer = [0u8; 100];
-        let stdin = io::stdin();
-        for line in stdin.lock().lines(){
-            stream.write(line.unwrap().as_bytes()).unwrap();
-            stream.read(&mut client_buffer).unwrap();
-            println!("{}", str::from_utf8(&client_buffer).unwrap());
-            stream.flush().unwrap();
-        }
+        let mut y = TcpStream::try_clone(&stream).unwrap();
+        thread::spawn(move || read_line(&mut y));
+        stream.read(&mut client_buffer).unwrap();
+        stream.flush().unwrap();
+        println!("{}", str::from_utf8(&client_buffer).unwrap());
+    }
+}
+
+fn read_line(stream: &mut TcpStream){
+    let stdin = io::stdin();
+    for line in stdin.lock().lines(){
+        let l = line.unwrap().clone();
+        stream.write(l.as_bytes()).unwrap();
+        break
     }
 }
